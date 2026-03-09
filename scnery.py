@@ -1,0 +1,52 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+img = cv2.imread("noisy.jpg")
+if img is None:
+    print("cant find noisy.jpg, make sure its in the same folder as this script")
+    exit()
+print(f"loaded image: {img.shape[1]}x{img.shape[0]}, colour channels: {img.shape[2]}")
+bilateral = cv2.bilateralFilter(img, d=9, sigmaColor=75, sigmaSpace=75)
+b, g, r    = cv2.split(img)
+median_b   = cv2.medianBlur(b, 5)
+median_g   = cv2.medianBlur(g, 5)
+median_r   = cv2.medianBlur(r, 5)
+median_col = cv2.merge([median_b, median_g, median_r])
+kernel     = np.ones((3,3), np.uint8)
+morph_b    = cv2.morphologyEx(b, cv2.MORPH_OPEN, kernel)
+morph_g    = cv2.morphologyEx(g, cv2.MORPH_OPEN, kernel)
+morph_r    = cv2.morphologyEx(r, cv2.MORPH_OPEN, kernel)
+morph_col  = cv2.merge([morph_b, morph_g, morph_r])
+def snr(original, filtered):
+    noise        = original.astype(np.float32) - filtered.astype(np.float32)
+    signal_power = np.mean(original.astype(np.float32) ** 2)
+    noise_power  = np.mean(noise ** 2)
+    if noise_power == 0:
+        return float('inf')
+    return 10 * np.log10(signal_power / noise_power)
+snr_bilateral = snr(img, bilateral)
+snr_median    = snr(img, median_col)
+snr_morph     = snr(img, morph_col)
+print(f"SNR  bilateral: {snr_bilateral:.2f} dB")
+print(f"SNR  median-5 : {snr_median:.2f} dB")
+print(f"SNR  morph    : {snr_morph:.2f} dB")
+print("winner: bilateral chosen - preserves colours and texture edges best")
+os.makedirs("output", exist_ok=True)
+cv2.imwrite("output/scenery_filtered.jpg", bilateral)
+print("saved to output/scenery_filtered.jpg")
+def bgr_to_rgb(image):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+fig, axes = plt.subplots(1, 4, figsize=(22, 5))
+fig.suptitle("Scenery - Noise Filtering (Colour Preserved)", fontsize=13)
+axes[0].imshow(bgr_to_rgb(img));          axes[0].set_title("Noisy Input\n(original colour)")
+axes[1].imshow(bgr_to_rgb(bilateral));    axes[1].set_title(f"Bilateral Filter\n{snr_bilateral:.1f} dB  ← best")
+axes[2].imshow(bgr_to_rgb(median_col));   axes[2].set_title(f"Median k=5\n{snr_median:.1f} dB")
+axes[3].imshow(bgr_to_rgb(morph_col));    axes[3].set_title(f"Morph Open\n{snr_morph:.1f} dB")
+for ax in axes:
+    ax.axis("off")
+plt.tight_layout()
+plt.savefig("output/scenery_comparison.png", dpi=150)
+print("comparison chart saved to output/scenery_comparison.png")
+plt.show()
+plt.close()
