@@ -1,7 +1,7 @@
 
 import cv2
 
-import matplotlib.pyplot as plt
+
 import os
 img = cv2.imread("iron_man_noisy (1).jpg")
 if img is None:
