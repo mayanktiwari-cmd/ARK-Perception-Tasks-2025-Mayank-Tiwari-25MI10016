@@ -1,6 +1,6 @@
 
 import cv2
-import numpy as mp
+import numpy as np
 import matplotlib.pyplot as plt
 import os
 img = cv2.imread("iron_man_noisy (1).jpg")
