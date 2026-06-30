@@ -17,4 +17,4 @@ Task 2.3 — Medial Axis Detection
 medial_axis.py — processes all 3 surgical tool videos and draws the medial axis in green on each frame.
 Pipeline: background subtraction with MOG2 → morphological cleaning → Sobel edge detection → custom Hough Transform → average the two strongest lines to get the medial axis.
 The Hough Transform is written from scratch with no cv2.HoughLines. The first version used nested Python loops and took about a minute per frame. Replaced the loops with NumPy broadcasting which computes the entire rho matrix in one operation — dropped it down to under 100ms per frame.
-Output videos: 
+ 
